@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>The VRthan Trials - Physical Combat</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-aabb-collider-component@3.1.0/dist/aframe-aabb-collider-component.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <img id="nathan-img" src="nathan.png">
+      </a-assets>
+
+      <a-entity environment="preset: toxic; dressingAmount: 500; groundColor: #3d2600"></a-entity>
+
+      <a-entity id="nathan" class="target" position="0 0 -3" data-hp="100">
+        <a-image src="#nathan-img" width="3" height="5" position="0 2.5 0"></a-image>
+        
+        <a-text id="hp-text" value="HP: 100" align="center" position="0 5.5 0" color="#00ff00" scale="2 2 2"></a-text>
+        
+        <a-animation id="hit-anim" attribute="material.color" from="red" to="white" dur="100" begin="hit"></a-animation>
+      </a-entity>
+
+      <a-entity id="rig">
+        <a-camera position="0 1.6 0"></a-camera>
+
+        <a-entity id="right-hand" 
+                  oculus-touch-controls="hand: right" 
+                  hand-controls="hand: right"
+                  aabb-collider="objects: .target">
+          
+          <a-entity id="axe-mesh" rotation="0 90 0" position="0 0 -0.2">
+            <a-cylinder color="#3d2600" height="0.8" radius="0.03"></a-cylinder>
+            <a-sphere id="axe-head" 
+                      color="#5c3a00" 
+                      radius="0.25" 
+                      position="0 0.4 0" 
+                      scale="1 1.4 0.6"
+                      roughness="1">
+            </a-sphere>
+          </a-entity>
+        </a-entity>
+
+        <a-entity oculus-touch-controls="hand: left" hand-controls="hand: left"></a-entity>
+      </a-entity>
+
+      <a-light type="ambient" intensity="0.5"></a-light>
+      <a-light type="directional" position="1 4 2" intensity="1"></a-light>
+    </a-scene>
+
+    <script>
+      const nathan = document.querySelector('#nathan');
+      const hpText = document.querySelector('#hp-text');
+      const rightHand = document.querySelector('#right-hand');
+      
+      let canHit = true;
+      let hp = 100;
+
+      // Listen for the 'hit' event from the aabb-collider
+      rightHand.addEventListener('hitstart', function (evt) {
+        if (!canHit) return;
+
+        // Damage Logic
+        hp -= 10;
+        canHit = false; // Cooldown so one swing doesn't kill him instantly
+        
+        // Update UI
+        hpText.setAttribute('value', `HP: ${hp}`);
+        if (hp <= 50) hpText.setAttribute('color', 'orange');
+        if (hp <= 0) {
+          hpText.setAttribute('value', 'NATHAN DEFEATED');
+          nathan.setAttribute('visible', 'false');
+        }
+
+        // Haptic Feedback (Vibration)
+        const gamepads = navigator.getGamepads();
+        for (let i = 0; i < gamepads.length; i++) {
+          const gp = gamepads[i];
+          if (gp && gp.hapticActuators && gp.hapticActuators[0]) {
+            gp.hapticActuators[0].pulse(0.8, 100);
+          }
+        }
+
+        console.log("CLANG! The Shit Axe connects.");
+
+        // Cooldown timer
+        setTimeout(() => { canHit = true; }, 500);
+      });
+    </script>
+  </body>
+</html>
